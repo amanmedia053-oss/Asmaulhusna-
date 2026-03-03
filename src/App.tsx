@@ -112,13 +112,17 @@ const Onboarding = ({ onComplete }: { onComplete: () => void; key?: React.Key })
 
       <div className="p-8 flex flex-col gap-4">
         <div className="flex justify-between items-center mb-4">
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onComplete}
             className="text-emerald-600 font-pashto font-medium px-4 py-2"
           >
             Skip
-          </button>
-          <button 
+          </motion.button>
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => {
               if (currentSlide < slides.length - 1) {
                 setCurrentSlide(s => s + 1);
@@ -130,7 +134,7 @@ const Onboarding = ({ onComplete }: { onComplete: () => void; key?: React.Key })
           >
             {currentSlide === slides.length - 1 ? "پيل کړئ" : "بل"}
             <ArrowRight className="w-5 h-5" />
-          </button>
+          </motion.button>
         </div>
       </div>
     </div>
@@ -139,23 +143,33 @@ const Onboarding = ({ onComplete }: { onComplete: () => void; key?: React.Key })
 
 const Header = ({ title, onBack, onMenu }: { title: string; onBack?: () => void; onMenu?: () => void }) => (
   <header 
-    className="bg-emerald-600 text-white p-6 rounded-b-[40px] shadow-lg relative overflow-hidden"
-    style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)' }}
+    className="bg-emerald-600 text-white p-6 rounded-3xl shadow-lg relative overflow-hidden mx-4 mt-4 mb-2"
+    style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}
   >
     <div className="absolute inset-0 opacity-10 islamic-pattern pointer-events-none" />
     <div className="relative z-10 flex items-center justify-between">
       {onBack ? (
-        <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full">
+        <motion.button 
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={onBack} 
+          className="p-2 hover:bg-white/10 rounded-full"
+        >
           <ChevronLeft className="w-6 h-6" />
-        </button>
+        </motion.button>
       ) : <div className="w-10" />}
       
       <h1 className="text-2xl font-bold font-pashto">{title}</h1>
       
       {onMenu ? (
-        <button onClick={onMenu} className="p-2 hover:bg-white/10 rounded-full">
+        <motion.button 
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={onMenu} 
+          className="p-2 hover:bg-white/10 rounded-full"
+        >
           <Menu className="w-6 h-6" />
-        </button>
+        </motion.button>
       ) : <div className="w-10" />}
     </div>
   </header>
@@ -201,41 +215,53 @@ const Home = ({
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 gap-4">
-        <button 
+        <motion.button 
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => onNavigate('list')}
           className="bg-emerald-50 border border-emerald-100 p-6 rounded-3xl flex items-center justify-between group hover:bg-emerald-100 transition-colors"
         >
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-emerald-600 text-white rounded-2xl">
+            <motion.div 
+              whileHover={{ rotate: 10 }}
+              className="p-3 bg-emerald-600 text-white rounded-2xl"
+            >
               <BookOpen className="w-6 h-6" />
-            </div>
+            </motion.div>
             <div className="text-right">
               <h3 className="font-pashto font-bold text-emerald-900">ټول نومونه وګورئ</h3>
               <p className="text-xs text-emerald-700 font-pashto">۹۹ نومونه د معنا سره</p>
             </div>
           </div>
           <ChevronRight className="w-6 h-6 text-emerald-400 group-hover:translate-x-1 transition-transform" />
-        </button>
+        </motion.button>
 
-        <button 
+        <motion.button 
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => onNavigate('tasbeeh')}
           className="bg-gold-50 border border-gold-100 p-6 rounded-3xl flex items-center justify-between group hover:bg-gold-100 transition-colors"
         >
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gold-600 text-white rounded-2xl">
+            <motion.div 
+              whileHover={{ rotate: -10 }}
+              className="p-3 bg-gold-600 text-white rounded-2xl"
+            >
               <RotateCcw className="w-6 h-6" />
-            </div>
+            </motion.div>
             <div className="text-right">
               <h3 className="font-pashto font-bold text-gold-900">تسبيح کاؤنټر</h3>
               <p className="text-xs text-gold-700 font-pashto">خپل ذکر ثبت کړئ</p>
             </div>
           </div>
           <ChevronRight className="w-6 h-6 text-gold-400 group-hover:translate-x-1 transition-transform" />
-        </button>
+        </motion.button>
       </div>
 
       {/* Audio Recitation Prompt */}
-      <button 
+      <motion.button 
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
         onClick={onShowAudio}
         className="w-full emerald-gold-gradient p-6 rounded-3xl text-white shadow-lg shadow-emerald-100 flex items-center justify-between hover:scale-[1.02] active:scale-[0.98] transition-all text-right"
       >
@@ -243,10 +269,14 @@ const Home = ({
           <h3 className="font-pashto font-bold text-lg">ټول نومونه واورئ</h3>
           <p className="text-xs opacity-90 font-pashto">۴ دقيقې آډيو تلاوت</p>
         </div>
-        <div className="bg-white text-emerald-700 p-4 rounded-full shadow-lg">
+        <motion.div 
+          animate={{ scale: [1, 1.1, 1] }}
+          transition={{ repeat: Infinity, duration: 2 }}
+          className="bg-white text-emerald-700 p-4 rounded-full shadow-lg"
+        >
           <Play className="w-6 h-6 fill-current" />
-        </div>
-      </button>
+        </motion.div>
+      </motion.button>
     </div>
   );
 };
@@ -473,24 +503,30 @@ const NamesList = ({
             />
           </div>
           <div className="bg-slate-100 p-1 rounded-2xl flex">
-            <button 
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={() => setViewMode('grid')}
               className={cn("p-2 rounded-xl transition-colors", viewMode === 'grid' ? "bg-white shadow-sm text-emerald-600" : "text-slate-400")}
             >
               <Grid className="w-5 h-5" />
-            </button>
-            <button 
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={() => setViewMode('list')}
               className={cn("p-2 rounded-xl transition-colors", viewMode === 'list' ? "bg-white shadow-sm text-emerald-600" : "text-slate-400")}
             >
               <List className="w-5 h-5" />
-            </button>
-            <button 
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={() => setViewMode('pager')}
               className={cn("p-2 rounded-xl transition-colors", viewMode === 'pager' ? "bg-white shadow-sm text-emerald-600" : "text-slate-400")}
             >
               <BookOpen className="w-5 h-5" />
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
@@ -680,18 +716,22 @@ const NameDetail = ({
           
           {/* Action Buttons Overlay */}
           <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex gap-4">
-            <button 
+            <motion.button 
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              whileTap={{ scale: 0.9 }}
               onClick={saveAsImage}
-              className="bg-white p-4 rounded-2xl shadow-xl text-emerald-600 hover:scale-110 transition-transform"
+              className="bg-white p-4 rounded-2xl shadow-xl text-emerald-600 transition-all"
             >
               <Download className="w-6 h-6" />
-            </button>
-            <button 
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.1, rotate: -5 }}
+              whileTap={{ scale: 0.9 }}
               onClick={shareName}
-              className="bg-white p-4 rounded-2xl shadow-xl text-emerald-600 hover:scale-110 transition-transform"
+              className="bg-white p-4 rounded-2xl shadow-xl text-emerald-600 transition-all"
             >
               <Share2 className="w-6 h-6" />
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -752,8 +792,10 @@ const Tasbeeh = ({
       <div className="flex flex-col gap-4 w-full items-center">
         <div className="flex gap-2 bg-slate-100 p-1 rounded-2xl">
           {[33, 99, 1000].map(t => (
-            <button 
+            <motion.button 
               key={t}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => { setTarget(t); setIsCustom(false); }}
               className={cn(
                 "px-4 py-2 rounded-xl font-bold transition-all text-sm",
@@ -761,9 +803,11 @@ const Tasbeeh = ({
               )}
             >
               {t}
-            </button>
+            </motion.button>
           ))}
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setIsCustom(true)}
             className={cn(
               "px-4 py-2 rounded-xl font-bold transition-all text-sm",
@@ -771,7 +815,7 @@ const Tasbeeh = ({
             )}
           >
             Custom
-          </button>
+          </motion.button>
         </div>
         
         {isCustom && (
@@ -792,9 +836,10 @@ const Tasbeeh = ({
       </div>
 
       {/* Counter Circle */}
-      <div 
+      <motion.div 
+        whileTap={{ scale: 0.9 }}
         onClick={() => setCount(c => c + 1)}
-        className="relative w-64 h-64 flex items-center justify-center cursor-pointer group active:scale-95 transition-transform"
+        className="relative w-64 h-64 flex items-center justify-center cursor-pointer group transition-transform"
       >
         <svg className="absolute inset-0 w-full h-full -rotate-90">
           <circle 
@@ -809,25 +854,37 @@ const Tasbeeh = ({
             strokeLinecap="round"
             initial={{ strokeDasharray: "0 722" }}
             animate={{ strokeDasharray: `${(progress / 100) * 722} 722` }}
+            transition={{ type: "spring", stiffness: 50, damping: 15 }}
           />
         </svg>
         <div className="text-center z-10">
           <p className="text-slate-400 font-pashto text-xs mb-1">ټول ذکر</p>
-          <h2 className="text-6xl font-bold text-emerald-900 font-sans">{count}</h2>
+          <motion.h2 
+            key={count}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-6xl font-bold text-emerald-900 font-sans"
+          >
+            {count}
+          </motion.h2>
           {name && <p className="text-emerald-600 font-arabic text-xl mt-2">{name.arabic}</p>}
           <p className="text-xs text-slate-400 mt-1 font-sans">Target: {target}</p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Controls */}
       <div className="flex gap-6">
-        <button 
+        <motion.button 
+          whileHover={{ scale: 1.1, rotate: -180 }}
+          whileTap={{ scale: 0.9 }}
           onClick={() => setCount(0)}
           className="p-4 bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-colors"
         >
           <RotateCcw className="w-6 h-6" />
-        </button>
-        <button 
+        </motion.button>
+        <motion.button 
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
           onClick={() => setVibrate(!vibrate)}
           className={cn(
             "p-4 rounded-2xl transition-colors",
@@ -835,7 +892,7 @@ const Tasbeeh = ({
           )}
         >
           {vibrate ? <Volume2 className="w-6 h-6" /> : <VolumeX className="w-6 h-6" />}
-        </button>
+        </motion.button>
       </div>
 
       <p className="text-slate-400 font-pashto text-xs text-center">
@@ -931,16 +988,21 @@ const Sidebar = ({ isOpen, onClose, onNavigate }: { isOpen: boolean; onClose: ()
               { id: 'tasbeeh', icon: <RotateCcw className="w-5 h-5" />, label: 'تسبيح' },
               { id: 'about', icon: <Info className="w-5 h-5" />, label: 'زمونږ په اړه' },
             ].reverse().map(item => (
-              <button 
+              <motion.button 
                 key={item.id}
+                whileHover={{ x: -10, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => { onNavigate(item.id as Screen); onClose(); }}
-                className="flex items-center justify-end gap-4 p-4 rounded-2xl hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 transition-all font-pashto font-bold text-right"
+                className="flex items-center justify-end gap-4 p-4 rounded-2xl hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 transition-all font-pashto font-bold text-right group"
               >
                 {item.label}
-                <div className="p-2 rounded-xl bg-slate-100 group-hover:bg-emerald-100">
+                <motion.div 
+                  whileHover={{ rotate: 15 }}
+                  className="p-2 rounded-xl bg-slate-100 group-hover:bg-emerald-100"
+                >
                   {item.icon}
-                </div>
-              </button>
+                </motion.div>
+              </motion.button>
             ))}
           </div>
 
@@ -962,19 +1024,26 @@ const Navigation = ({ current, onNavigate }: { current: Screen; onNavigate: (s: 
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-100 p-4 flex justify-around items-center z-40 flex-row">
+    <nav className="fixed bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md border border-slate-100 p-4 flex justify-around items-center z-40 flex-row rounded-3xl shadow-xl">
       {items.map(item => (
-        <button 
+        <motion.button 
           key={item.id}
+          whileHover={{ scale: 1.1, y: -2 }}
+          whileTap={{ scale: 0.9 }}
           onClick={() => onNavigate(item.id as Screen)}
           className={cn(
             "flex flex-col items-center gap-1 transition-all",
-            current === item.id ? "text-emerald-600 scale-110" : "text-slate-400"
+            current === item.id ? "text-emerald-600" : "text-slate-400"
           )}
         >
-          {item.icon}
+          <div className={cn(
+            "p-1 rounded-xl transition-colors",
+            current === item.id ? "bg-emerald-50" : ""
+          )}>
+            {item.icon}
+          </div>
           <span className="text-[10px] font-pashto font-bold">{item.label}</span>
-        </button>
+        </motion.button>
       ))}
     </nav>
   );
