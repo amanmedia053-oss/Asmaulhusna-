@@ -235,52 +235,88 @@ const Home = ({
       </div>
 
       {/* Audio Recitation Prompt */}
-      <div className="emerald-gold-gradient p-6 rounded-3xl text-white shadow-lg shadow-emerald-100 flex items-center justify-between">
+      <button 
+        onClick={onShowAudio}
+        className="w-full emerald-gold-gradient p-6 rounded-3xl text-white shadow-lg shadow-emerald-100 flex items-center justify-between hover:scale-[1.02] active:scale-[0.98] transition-all text-right"
+      >
         <div className="flex flex-col gap-1">
           <h3 className="font-pashto font-bold text-lg">ټول نومونه واورئ</h3>
           <p className="text-xs opacity-90 font-pashto">۴ دقيقې آډيو تلاوت</p>
         </div>
-        <button 
-          onClick={onShowAudio}
-          className="bg-white text-emerald-700 p-4 rounded-full shadow-lg hover:scale-105 transition-transform"
-        >
+        <div className="bg-white text-emerald-700 p-4 rounded-full shadow-lg">
           <Play className="w-6 h-6 fill-current" />
-        </button>
-      </div>
+        </div>
+      </button>
     </div>
   );
 };
 
-const AudioPlayer = ({ onClose }: { onClose: () => void }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
+const Equalizer = ({ isPlaying }: { isPlaying: boolean }) => (
+  <div className="flex items-end gap-1.5 h-12">
+    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+      <motion.div
+        key={i}
+        animate={{
+          height: isPlaying ? [12, 48, 20, 40, 16, 32, 12] : 12,
+        }}
+        transition={{
+          repeat: Infinity,
+          duration: 0.6 + (i * 0.1),
+          ease: "easeInOut",
+        }}
+        className="w-2 bg-white/40 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]"
+      />
+    ))}
+  </div>
+);
+
+const AudioPlayer = ({ onClose, autoPlay = false }: { onClose: () => void; autoPlay?: boolean }) => {
+  const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(247); // Fallback duration
+  const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    if (audioRef.current) {
+    if (audioRef.current && isPlaying && !error) {
+      audioRef.current.play().catch(err => {
+        console.error("Audio play error:", err);
+        // Don't set error state here as it might be a temporary user interaction issue
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (audioRef.current && !error) {
       if (isPlaying) {
         audioRef.current.play().catch(err => console.error("Audio play error:", err));
       } else {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying]);
+  }, [isPlaying, error]);
 
   const onTimeUpdate = () => {
     if (audioRef.current) {
       const current = audioRef.current.currentTime;
-      const dur = audioRef.current.duration || 247;
+      const dur = isFinite(audioRef.current.duration) ? audioRef.current.duration : 247;
       setCurrentTime(current);
       setProgress((current / dur) * 100);
     }
   };
 
   const onLoadedMetadata = () => {
-    if (audioRef.current) {
+    if (audioRef.current && isFinite(audioRef.current.duration)) {
       setDuration(audioRef.current.duration);
+      setError(null);
     }
+  };
+
+  const onError = () => {
+    console.error("Audio failed to load");
+    setError("آډیو فایل پیدا نشو. مهرباني وکړئ انټرنیټ یا فایل وګورئ.");
+    setIsPlaying(false);
   };
 
   const onEnded = () => {
@@ -295,8 +331,9 @@ const AudioPlayer = ({ onClose }: { onClose: () => void }) => {
   }, [currentTime]);
 
   const skip = (seconds: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = Math.max(0, Math.min(audioRef.current.duration, audioRef.current.currentTime + seconds));
+    if (audioRef.current && isFinite(audioRef.current.duration)) {
+      const newTime = audioRef.current.currentTime + seconds;
+      audioRef.current.currentTime = Math.max(0, Math.min(audioRef.current.duration, newTime));
     }
   };
 
@@ -313,72 +350,90 @@ const AudioPlayer = ({ onClose }: { onClose: () => void }) => {
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
         onEnded={onEnded}
+        onError={onError}
       />
       <Header title="تلاوت" onBack={onClose} />
       <div className="flex-1 flex flex-col items-center justify-center p-8 gap-8 islamic-pattern">
-        <div className="w-64 h-64 emerald-gold-gradient rounded-full flex items-center justify-center shadow-2xl relative">
-          <div className="absolute inset-0 opacity-20 islamic-pattern rounded-full" />
-          <motion.div 
-            animate={{ scale: isPlaying ? [1, 1.05, 1] : 1 }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="bg-white/20 p-8 rounded-full backdrop-blur-md flex flex-col items-center justify-center w-48 h-48"
-          >
-            <AnimatePresence mode="wait">
-              <motion.div 
-                key={currentLyric}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="text-center px-4"
+        {error ? (
+          <div className="bg-red-50 p-6 rounded-3xl border border-red-100 text-center max-w-xs">
+            <VolumeX className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <p className="text-red-700 font-pashto">{error}</p>
+            <button 
+              onClick={onClose}
+              className="mt-4 bg-red-600 text-white px-6 py-2 rounded-xl font-pashto"
+            >
+              بندول
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="w-64 h-64 emerald-gold-gradient rounded-full flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
+              <div className="absolute inset-0 opacity-20 islamic-pattern rounded-full" />
+              
+              <div className="relative z-10 flex flex-col items-center gap-6">
+                <Equalizer isPlaying={isPlaying} />
+                
+                <motion.div 
+                  animate={{ scale: isPlaying ? [1, 1.05, 1] : 1 }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="bg-white/20 p-6 rounded-full backdrop-blur-md flex flex-col items-center justify-center w-32 h-32 border border-white/30"
+                >
+                  <Volume2 className="w-12 h-12 text-white" />
+                </motion.div>
+              </div>
+            </div>
+
+            <div className="w-full space-y-6">
+              <div className="text-center min-h-[6rem] flex items-center justify-center px-4">
+                <AnimatePresence mode="wait">
+                  <motion.h3 
+                    key={currentLyric}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="text-2xl font-arabic font-bold text-emerald-900 leading-relaxed text-center"
+                  >
+                    {currentLyric || "تلاوت پيل کړئ"}
+                  </motion.h3>
+                </AnimatePresence>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="relative h-2 bg-emerald-100 rounded-full overflow-hidden">
+                  <motion.div 
+                    className="absolute left-0 top-0 h-full bg-emerald-600 shadow-[0_0_10px_rgba(5,150,105,0.4)]"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-slate-400 font-sans font-medium">
+                  <span>{Math.floor(currentTime / 60)}:{(Math.floor(currentTime) % 60).toString().padStart(2, '0')}</span>
+                  <span>{Math.floor(duration / 60)}:{(Math.floor(duration) % 60).toString().padStart(2, '0')}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-8">
+              <button 
+                onClick={() => skip(-5)}
+                className="p-4 text-emerald-600 hover:bg-emerald-50 rounded-full transition-all active:scale-90"
               >
-                <span className="text-2xl font-arabic font-bold text-white leading-relaxed">
-                  {currentLyric || <Volume2 className="w-16 h-16 text-white" />}
-                </span>
-              </motion.div>
-            </AnimatePresence>
-          </motion.div>
-        </div>
-
-        <div className="w-full space-y-4">
-          <div className="text-center">
-            <h3 className="text-xl font-pashto font-bold text-emerald-900 min-h-[3rem]">
-              {currentLyric}
-            </h3>
-            <p className="text-slate-500 font-pashto">۴ دقيقې مکمل تلاوت</p>
-          </div>
-          
-          <div className="relative h-2 bg-emerald-100 rounded-full overflow-hidden">
-            <motion.div 
-              className="absolute left-0 top-0 h-full bg-emerald-600"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-slate-400 font-sans">
-            <span>{Math.floor(currentTime / 60)}:{(Math.floor(currentTime) % 60).toString().padStart(2, '0')}</span>
-            <span>{Math.floor(duration / 60)}:{(Math.floor(duration) % 60).toString().padStart(2, '0')}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-8">
-          <button 
-            onClick={() => skip(-5)}
-            className="p-4 text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors"
-          >
-            <SkipBack className="w-8 h-8" />
-          </button>
-          <button 
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="w-20 h-20 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-200 hover:scale-105 transition-transform"
-          >
-            {isPlaying ? <Pause className="w-10 h-10 fill-current" /> : <Play className="w-10 h-10 fill-current ml-1" />}
-          </button>
-          <button 
-            onClick={() => skip(5)}
-            className="p-4 text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors"
-          >
-            <SkipForward className="w-8 h-8" />
-          </button>
-        </div>
+                <SkipBack className="w-8 h-8" />
+              </button>
+              <button 
+                onClick={() => setIsPlaying(!isPlaying)}
+                className="w-20 h-20 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-200 hover:scale-105 active:scale-95 transition-all"
+              >
+                {isPlaying ? <Pause className="w-10 h-10 fill-current" /> : <Play className="w-10 h-10 fill-current ml-1" />}
+              </button>
+              <button 
+                onClick={() => skip(5)}
+                className="p-4 text-emerald-600 hover:bg-emerald-50 rounded-full transition-all active:scale-90"
+              >
+                <SkipForward className="w-8 h-8" />
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </motion.div>
   );
@@ -548,16 +603,42 @@ const NameDetail = ({
   const saveAsImage = async () => {
     if (!captureRef.current) return;
     try {
+      // Ensure images are loaded and styles are applied
       const canvas = await html2canvas(captureRef.current, {
-        backgroundColor: null,
-        scale: 2
+        backgroundColor: '#059669', // Fallback to emerald-600
+        scale: 3, // Higher quality
+        useCORS: true,
+        logging: false,
+        allowTaint: true
       });
-      const link = document.createElement('a');
-      link.download = `${name.english}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      
+      const dataUrl = canvas.toDataURL('image/png');
+      
+      if (Capacitor.isNativePlatform()) {
+        // For native, use Share plugin if available or just open in new tab
+        if (navigator.share) {
+          const blob = await (await fetch(dataUrl)).blob();
+          const file = new File([blob], `${name.english}.png`, { type: 'image/png' });
+          await navigator.share({
+            files: [file],
+            title: name.arabic,
+            text: `${name.arabic} - ${name.pashto}`
+          });
+        } else {
+          const link = document.createElement('a');
+          link.download = `${name.english}.png`;
+          link.href = dataUrl;
+          link.click();
+        }
+      } else {
+        const link = document.createElement('a');
+        link.download = `${name.english}.png`;
+        link.href = dataUrl;
+        link.click();
+      }
     } catch (err) {
       console.error('Error saving image:', err);
+      alert('عکس جوړولو کې ستونزه راغله');
     }
   };
 
@@ -983,10 +1064,10 @@ export default function App() {
       const backListener = CapApp.addListener('backButton', ({ canGoBack }) => {
         if (isSidebarOpen) {
           setIsSidebarOpen(false);
-        } else if (screen === 'home') {
-          setShowExitDialog(true);
         } else if (showAudio) {
           setShowAudio(false);
+        } else if (screen === 'home') {
+          setShowExitDialog(true);
         } else {
           goBack();
         }
@@ -1080,7 +1161,7 @@ export default function App() {
             <Navigation current={screen} onNavigate={(s) => setScreen(s)} />
             
             <AnimatePresence>
-              {showAudio && <AudioPlayer onClose={() => setShowAudio(false)} />}
+              {showAudio && <AudioPlayer onClose={() => setShowAudio(false)} autoPlay={true} />}
             </AnimatePresence>
 
             <Sidebar 
