@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { StatusBar } from '@capacitor/status-bar';
 import { 
@@ -27,7 +28,9 @@ import {
   Heart,
   Home as HomeIcon,
   Search,
-  Check
+  Check,
+  Menu,
+  X
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import namesData from './data/names.json';
@@ -134,7 +137,7 @@ const Onboarding = ({ onComplete }: { onComplete: () => void; key?: React.Key })
   );
 };
 
-const Header = ({ title, onBack }: { title: string; onBack?: () => void }) => (
+const Header = ({ title, onBack, onMenu }: { title: string; onBack?: () => void; onMenu?: () => void }) => (
   <header 
     className="bg-emerald-600 text-white p-6 rounded-b-[40px] shadow-lg relative overflow-hidden"
     style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)' }}
@@ -146,8 +149,14 @@ const Header = ({ title, onBack }: { title: string; onBack?: () => void }) => (
           <ChevronLeft className="w-6 h-6" />
         </button>
       ) : <div className="w-10" />}
+      
       <h1 className="text-2xl font-bold font-pashto">{title}</h1>
-      <div className="w-10" />
+      
+      {onMenu ? (
+        <button onClick={onMenu} className="p-2 hover:bg-white/10 rounded-full">
+          <Menu className="w-6 h-6" />
+        </button>
+      ) : <div className="w-10" />}
     </div>
   </header>
 );
@@ -246,30 +255,50 @@ const AudioPlayer = ({ onClose }: { onClose: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const totalDuration = 247; // Total seconds based on lyrics
+  const [duration, setDuration] = useState(247); // Fallback duration
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    let interval: any;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setCurrentTime(t => {
-          const next = t + 0.1;
-          if (next >= totalDuration) {
-            setIsPlaying(false);
-            return totalDuration;
-          }
-          setProgress((next / totalDuration) * 100);
-          return next;
-        });
-      }, 100);
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.play().catch(err => console.error("Audio play error:", err));
+      } else {
+        audioRef.current.pause();
+      }
     }
-    return () => clearInterval(interval);
   }, [isPlaying]);
+
+  const onTimeUpdate = () => {
+    if (audioRef.current) {
+      const current = audioRef.current.currentTime;
+      const dur = audioRef.current.duration || 247;
+      setCurrentTime(current);
+      setProgress((current / dur) * 100);
+    }
+  };
+
+  const onLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const onEnded = () => {
+    setIsPlaying(false);
+    setProgress(0);
+    setCurrentTime(0);
+  };
 
   const currentLyric = useMemo(() => {
     const active = [...audioLyrics].reverse().find(l => currentTime >= l.time);
     return active ? active.text : "";
   }, [currentTime]);
+
+  const skip = (seconds: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(0, Math.min(audioRef.current.duration, audioRef.current.currentTime + seconds));
+    }
+  };
 
   return (
     <motion.div 
@@ -278,6 +307,13 @@ const AudioPlayer = ({ onClose }: { onClose: () => void }) => {
       exit={{ y: '100%' }}
       className="fixed inset-0 z-50 bg-white flex flex-col"
     >
+      <audio 
+        ref={audioRef}
+        src="/obaid.mp3"
+        onTimeUpdate={onTimeUpdate}
+        onLoadedMetadata={onLoadedMetadata}
+        onEnded={onEnded}
+      />
       <Header title="تلاوت" onBack={onClose} />
       <div className="flex-1 flex flex-col items-center justify-center p-8 gap-8 islamic-pattern">
         <div className="w-64 h-64 emerald-gold-gradient rounded-full flex items-center justify-center shadow-2xl relative">
@@ -319,16 +355,13 @@ const AudioPlayer = ({ onClose }: { onClose: () => void }) => {
           </div>
           <div className="flex justify-between text-xs text-slate-400 font-sans">
             <span>{Math.floor(currentTime / 60)}:{(Math.floor(currentTime) % 60).toString().padStart(2, '0')}</span>
-            <span>4:07</span>
+            <span>{Math.floor(duration / 60)}:{(Math.floor(duration) % 60).toString().padStart(2, '0')}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-8">
           <button 
-            onClick={() => {
-              setCurrentTime(Math.max(0, currentTime - 5));
-              setProgress((Math.max(0, currentTime - 5) / totalDuration) * 100);
-            }}
+            onClick={() => skip(-5)}
             className="p-4 text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors"
           >
             <SkipBack className="w-8 h-8" />
@@ -340,10 +373,7 @@ const AudioPlayer = ({ onClose }: { onClose: () => void }) => {
             {isPlaying ? <Pause className="w-10 h-10 fill-current" /> : <Play className="w-10 h-10 fill-current ml-1" />}
           </button>
           <button 
-            onClick={() => {
-              setCurrentTime(Math.min(totalDuration, currentTime + 5));
-              setProgress((Math.min(totalDuration, currentTime + 5) / totalDuration) * 100);
-            }}
+            onClick={() => skip(5)}
             className="p-4 text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors"
           >
             <SkipForward className="w-8 h-8" />
@@ -784,16 +814,74 @@ const About = () => {
   );
 };
 
+const Sidebar = ({ isOpen, onClose, onNavigate }: { isOpen: boolean; onClose: () => void; onNavigate: (s: Screen) => void }) => (
+  <AnimatePresence>
+    {isOpen && (
+      <>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]"
+        />
+        <motion.div 
+          initial={{ x: '100%' }}
+          animate={{ x: 0 }}
+          exit={{ x: '100%' }}
+          className="fixed top-0 right-0 bottom-0 w-72 bg-white z-[101] shadow-2xl flex flex-col islamic-pattern"
+        >
+          <div className="bg-emerald-600 p-8 pt-16 text-white relative overflow-hidden text-right">
+            <div className="absolute inset-0 opacity-10 islamic-pattern" />
+            <button onClick={onClose} className="absolute top-12 left-6 p-2 hover:bg-white/10 rounded-full">
+              <X className="w-6 h-6" />
+            </button>
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4 backdrop-blur-md border border-white/30 ml-auto">
+              <BookOpen className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold font-pashto">اسماء الحسنا</h2>
+            <p className="text-emerald-100 font-pashto opacity-80 text-sm">د الله جل جلاله ۹۹ ښکلي نومونه</p>
+          </div>
+
+          <div className="flex-1 p-6 flex flex-col gap-2">
+            {[
+              { id: 'home', icon: <HomeIcon className="w-5 h-5" />, label: 'کور' },
+              { id: 'list', icon: <BookOpen className="w-5 h-5" />, label: 'نومونه' },
+              { id: 'tasbeeh', icon: <RotateCcw className="w-5 h-5" />, label: 'تسبيح' },
+              { id: 'about', icon: <Info className="w-5 h-5" />, label: 'زمونږ په اړه' },
+            ].reverse().map(item => (
+              <button 
+                key={item.id}
+                onClick={() => { onNavigate(item.id as Screen); onClose(); }}
+                className="flex items-center justify-end gap-4 p-4 rounded-2xl hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 transition-all font-pashto font-bold text-right"
+              >
+                {item.label}
+                <div className="p-2 rounded-xl bg-slate-100 group-hover:bg-emerald-100">
+                  {item.icon}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="p-8 border-t border-slate-100 text-center opacity-40">
+            <p className="text-xs font-pashto">ټول حقوق خوندي دي © ۲۰۲۴</p>
+          </div>
+        </motion.div>
+      </>
+    )}
+  </AnimatePresence>
+);
+
 const Navigation = ({ current, onNavigate }: { current: Screen; onNavigate: (s: Screen) => void }) => {
   const items = [
-    { id: 'home', icon: <HomeIcon className="w-6 h-6" />, label: 'کور' },
-    { id: 'list', icon: <BookOpen className="w-6 h-6" />, label: 'نومونه' },
-    { id: 'tasbeeh', icon: <RotateCcw className="w-6 h-6" />, label: 'تسبيح' },
     { id: 'about', icon: <Info className="w-6 h-6" />, label: 'زمونږ په اړه' },
+    { id: 'tasbeeh', icon: <RotateCcw className="w-6 h-6" />, label: 'تسبيح' },
+    { id: 'list', icon: <BookOpen className="w-6 h-6" />, label: 'نومونه' },
+    { id: 'home', icon: <HomeIcon className="w-6 h-6" />, label: 'کور' },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-100 p-4 flex justify-around items-center z-40">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-100 p-4 flex justify-around items-center z-40 flex-row">
       {items.map(item => (
         <button 
           key={item.id}
@@ -873,6 +961,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('home');
   const [isSplash, setIsSplash] = useState(true);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedName, setSelectedName] = useState<Name | null>(null);
   const [history, setHistory] = useState<Screen[]>([]);
   const [showAudio, setShowAudio] = useState(false);
@@ -888,23 +977,29 @@ export default function App() {
     const timer = setTimeout(() => setIsSplash(false), 3000);
 
     // Capacitor Setup
-    StatusBar.setBackgroundColor({ color: '#059669' }); // Emerald 600
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setBackgroundColor({ color: '#059669' }); // Emerald 600
 
-    const backListener = CapApp.addListener('backButton', ({ canGoBack }) => {
-      if (screen === 'home') {
-        setShowExitDialog(true);
-      } else if (showAudio) {
-        setShowAudio(false);
-      } else {
-        goBack();
-      }
-    });
+      const backListener = CapApp.addListener('backButton', ({ canGoBack }) => {
+        if (isSidebarOpen) {
+          setIsSidebarOpen(false);
+        } else if (screen === 'home') {
+          setShowExitDialog(true);
+        } else if (showAudio) {
+          setShowAudio(false);
+        } else {
+          goBack();
+        }
+      });
 
-    return () => {
-      clearTimeout(timer);
-      backListener.then(l => l.remove());
-    };
-  }, [screen, showAudio]);
+      return () => {
+        clearTimeout(timer);
+        backListener.then(l => l.remove());
+      };
+    } else {
+      return () => clearTimeout(timer);
+    }
+  }, [screen, showAudio, isSidebarOpen]);
 
   const randomName = useMemo(() => {
     const names = namesData as Name[];
@@ -962,6 +1057,7 @@ export default function App() {
             <Header 
               title={getTitle()} 
               onBack={screen !== 'home' ? goBack : undefined} 
+              onMenu={screen === 'home' ? () => setIsSidebarOpen(true) : undefined}
             />
             
             <main className="flex-1 flex flex-col overflow-hidden gradient-bg">
@@ -986,13 +1082,25 @@ export default function App() {
             <AnimatePresence>
               {showAudio && <AudioPlayer onClose={() => setShowAudio(false)} />}
             </AnimatePresence>
+
+            <Sidebar 
+              isOpen={isSidebarOpen} 
+              onClose={() => setIsSidebarOpen(false)} 
+              onNavigate={(s) => setScreen(s)} 
+            />
           </motion.div>
         )}
       </AnimatePresence>
 
       {showExitDialog && (
         <ExitDialog 
-          onConfirm={() => CapApp.exitApp()} 
+          onConfirm={() => {
+            if (Capacitor.isNativePlatform()) {
+              CapApp.exitApp();
+            } else {
+              setShowExitDialog(false);
+            }
+          }} 
           onCancel={() => setShowExitDialog(false)} 
         />
       )}
